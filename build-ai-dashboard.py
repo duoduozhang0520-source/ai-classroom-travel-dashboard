@@ -148,6 +148,26 @@ for name in people_names:
     order_count = len({row["order"] for row in rows if row["order"] and row["amount"] > 0})
     destinations = Counter(row["destination"] for row in rows if row["destination"])
     routes = Counter(row["route"] for row in rows if row["route"])
+    active_months = len({row["month"] for row in rows if row["amount"] > 0})
+    travel_days = len({row["date"] for row in rows if row["date"] and row["amount"] > 0})
+    city_count = len(destinations)
+    route_count = len(routes)
+    top_route_share = (
+        routes.most_common(1)[0][1] / sum(routes.values())
+        if routes and sum(routes.values())
+        else 0
+    )
+    monthly_orders = order_count / active_months if active_months else 0
+    if active_months >= 5 and city_count >= 8:
+        sales_profile = "广覆盖高频"
+    elif active_months >= 4 and city_count <= 6:
+        sales_profile = "区域深耕"
+    elif active_months <= 3 and order_count >= 12:
+        sales_profile = "阶段性攻坚"
+    elif active_months <= 2:
+        sales_profile = "低频观察"
+    else:
+        sales_profile = "常规拓展"
     refund_count = sum(row["refund"] for row in rows)
     change_count = sum(row["change"] for row in rows)
     over_count = sum(row["overstandard"] for row in rows)
@@ -167,6 +187,13 @@ for name in people_names:
             "refundCount": refund_count,
             "changeCount": change_count,
             "overstandardCount": over_count,
+            "activeMonths": active_months,
+            "travelDays": travel_days,
+            "cityCount": city_count,
+            "routeCount": route_count,
+            "topRouteShare": round(top_route_share, 6),
+            "monthlyOrders": round(monthly_orders, 2),
+            "salesProfile": sales_profile,
             "topCities": [item[0] for item in destinations.most_common(5)],
             "topRoutes": [item[0] for item in routes.most_common(4)],
             "monthly": monthly,
