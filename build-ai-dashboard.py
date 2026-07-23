@@ -248,27 +248,27 @@ for person in people:
     person["peerMedian"] = round(peer_median, 2)
     over_amount = max(person["spent"] - person["quota"], 0) if person["quota"] else person["spent"]
     if "无额度但有消费" in labels:
-        management_level = "立即介入"
+        management_level = "重点关注"
         management_reason = "无额度但发生消费"
-        management_action = "核实人员状态、费用归属和额度漏配，当周完成配置或费用调整。"
+        management_action = "了解人员状态、费用归属和额度配置，当周完成配置或费用调整。"
         certainty = 1.0
     elif person["rate"] is not None and person["rate"] >= 1.15:
-        management_level = "立即介入"
+        management_level = "重点关注"
         management_reason = f"累计超额{round(over_amount):,}元"
-        management_action = "核实超额业务必要性；合理投入补额度，行为问题优化路线与预订规则。"
+        management_action = "了解超额业务背景；合理投入补额度，行为问题优化路线与预订规则。"
         certainty = 0.9
     elif person["overstandardCount"] >= 8 and person["spent"] >= 10000:
-        management_level = "立即介入"
+        management_level = "重点关注"
         management_reason = f"超规记录{person['overstandardCount']}次"
         management_action = "逐笔复核超规原因，区分政策不适配与个人预订行为。"
         certainty = 0.85
     elif score >= 3:
-        management_level = "业务核实"
+        management_level = "待了解"
         management_reason = "、".join(labels[:2])
-        management_action = "结合负责区域、活动和拜访安排核实费用合理性，暂不直接压降。"
+        management_action = "结合负责区域、活动和拜访安排补充费用背景，暂不直接压降。"
         certainty = 0.55
     else:
-        management_level = "持续观察"
+        management_level = "常规观察"
         management_reason = "暂未发现确定性异常"
         management_action = "保持月度监控，关注费用趋势和覆盖变化。"
         certainty = 0.2
@@ -280,7 +280,7 @@ for person in people:
         over_amount
         + person["spent"] * 0.08
         + person["overstandardCount"] * 180
-        + (3500 if management_level == "立即介入" else 1200 if management_level == "业务核实" else 0)
+        + (3500 if management_level == "重点关注" else 1200 if management_level == "待了解" else 0)
         + certainty * 1000,
         2,
     )
@@ -296,19 +296,19 @@ for group in sorted({person["group"] for person in people}):
     cq = sum(person["carQuota"] for person in members)
     quota = tq + cq
     warning_people = sum(person["score"] >= 3 for person in members)
-    immediate_people = sum(person["managementLevel"] == "立即介入" for person in members)
-    verify_people = sum(person["managementLevel"] == "业务核实" for person in members)
+    immediate_people = sum(person["managementLevel"] == "重点关注" for person in members)
+    verify_people = sum(person["managementLevel"] == "待了解" for person in members)
     over_amount = sum(person["overAmount"] for person in members)
     if immediate_people:
-        management_level = "立即介入"
-        problem = f"{immediate_people}人需立即处理，累计超额/无额度影响约{round(over_amount):,}元"
+        management_level = "重点关注"
+        problem = f"{immediate_people}人建议优先关注，累计超额/无额度影响约{round(over_amount):,}元"
         action = "部门负责人逐人确认额度配置、业务必要性和超规原因。"
     elif verify_people:
-        management_level = "业务核实"
-        problem = f"{verify_people}人需结合区域覆盖或活动安排核实"
-        action = "先补充活动、项目和拜访说明，再决定是否调整额度。"
+        management_level = "待了解"
+        problem = f"{verify_people}人建议补充区域覆盖或活动安排"
+        action = "补充活动、项目和拜访背景后，再判断额度是否需要调整。"
     else:
-        management_level = "持续观察"
+        management_level = "常规观察"
         problem = "当前未发现确定性高的异常"
         action = "维持月度监控，重点观察人均和单次费用变化。"
     groups.append(
@@ -394,8 +394,8 @@ summary = {
     "warningPeople": sum(person["score"] >= 3 for person in people),
     "overPeople": sum("累计额度超额" in person["labels"] for person in people),
     "noQuotaPeople": sum("无额度但有消费" in person["labels"] for person in people),
-    "immediatePeople": sum(person["managementLevel"] == "立即介入" for person in people),
-    "verifyPeople": sum(person["managementLevel"] == "业务核实" for person in people),
+    "immediatePeople": sum(person["managementLevel"] == "重点关注" for person in people),
+    "verifyPeople": sum(person["managementLevel"] == "待了解" for person in people),
 }
 summary["rate"] = round(summary["spent"] / summary["quota"], 6) if summary["quota"] else 0
 summary["perHead"] = round(summary["spent"] / summary["headcount"], 2) if summary["headcount"] else 0
